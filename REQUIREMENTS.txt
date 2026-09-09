@@ -1,2 +1,4 @@
-Requerimientos. 
-
+typer
+pydantic
+requests
+pytest

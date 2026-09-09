@@ -1,5 +1,18 @@
+# El virtual environment
 /venv/
 
-/src/
-
+# Donde se guardará la base de datos de CodeQL
 /db/
+
+# Donde se clonarán repositorios
+/workspace/
+
+# Variables de entorno / token
+.env
+
+
+# Cache de Python
+__pycache__/
+*.pyc
+
+
