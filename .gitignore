@@ -14,5 +14,12 @@
 # Cache de Python
 __pycache__/
 *.pyc
+.pytest_cache/
+
+*.egg-info/
+
+test-*.json
+results.json
+
 
 

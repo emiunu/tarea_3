@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "miner"
+version = "0.1.0"
+description = "Miner de vulnerabilidades para organizaciones de GitHub usando CodeQL"
+requires-python = ">=3.10"
+dependencies = [
+    "typer",
+    "pydantic",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+miner = "miner.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
