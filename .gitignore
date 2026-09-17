@@ -17,9 +17,16 @@ __pycache__/
 .pytest_cache/
 
 *.egg-info/
+#Donde se guardan SBOMs generados
+/sboms/
 
+#Resultados de CodeQL
 test-*.json
 results.json
+
+#SBOM consolidado
+sbom-results.json
+sbom-test*.json
 
 
 
