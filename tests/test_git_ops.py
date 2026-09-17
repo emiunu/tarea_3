@@ -4,7 +4,7 @@ import subprocess
 
 import pytest
 
-from miner.git_ops import clone_repository
+from miner.git_ops import clone_repository,get_current_commit
 
 
 def test_clone_success(tmp_path, monkeypatch):
@@ -55,3 +55,24 @@ def test_clone_timeout_is_reported(tmp_path, monkeypatch):
 
     assert result.success is False
     assert "Timeout" in result.error
+
+def test_get_current_commit_returns_hash(tmp_path, monkeypatch):
+    def fake_run(*args, **kwargs):
+        return subprocess.CompletedProcess(args, returncode=0, stdout="abc123def456\n")
+ 
+    monkeypatch.setattr(subprocess, "run", fake_run)
+ 
+    commit = get_current_commit(tmp_path / "repo")
+ 
+    assert commit == "abc123def456"
+ 
+ 
+def test_get_current_commit_returns_none_on_failure(tmp_path, monkeypatch):
+    def fake_run(*args, **kwargs):
+        raise subprocess.CalledProcessError(returncode=128, cmd="git rev-parse")
+ 
+    monkeypatch.setattr(subprocess, "run", fake_run)
+ 
+    commit = get_current_commit(tmp_path / "not-a-repo")
+ 
+    assert commit is None

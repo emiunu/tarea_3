@@ -51,3 +51,18 @@ def clone_repository(
         return CloneResult(success=False, error=f"Error de sistema al clonar {repo_name}: {exc}")
 
     return CloneResult(success=True, path=destination)
+
+def get_current_commit(repo_path: Path) -> str | None:
+    #Retorna el hash del commit actual (HEAD) de un repo ya clonado.
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_path), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+        return None
+ 
+    return result.stdout.strip() or None
