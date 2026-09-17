@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -80,3 +81,54 @@ class OrganizationReport(BaseModel):
         )
 
         return cls(organization=organization, summary=summary, repositories=ordered_repos)
+
+class SbomStatus(str, Enum):
+ 
+    SUCCESS = "success"
+    FAILED = "failed"
+ 
+ 
+class SbomInfo(BaseModel):
+ 
+    repository: str
+    commit: str | None = None
+    generated_at: datetime
+    syft_version: str | None = None
+    status: SbomStatus
+    component_count: int = 0
+    sbom_path: str | None = None
+    error: str | None = None
+ 
+ 
+class SbomSummary(BaseModel):
+ 
+    repositories: int
+    generated: int
+    failed: int
+    total_components: int
+ 
+ 
+class SbomOrganizationReport(BaseModel):
+ 
+    organization: str
+    summary: SbomSummary
+    repositories: list[SbomInfo]
+ 
+    @classmethod
+    def build(cls, organization: str, repositories: list[SbomInfo]) -> "SbomOrganizationReport":
+ 
+        ordered_repos = sorted(repositories, key=lambda r: r.repository)
+ 
+        generated = sum(1 for r in ordered_repos if r.status == SbomStatus.SUCCESS)
+        failed = sum(1 for r in ordered_repos if r.status == SbomStatus.FAILED)
+        total_components = sum(r.component_count for r in ordered_repos)
+ 
+        summary = SbomSummary(
+            repositories=len(ordered_repos),
+            generated=generated,
+            failed=failed,
+            total_components=total_components,
+        )
+ 
+        return cls(organization=organization, summary=summary, repositories=ordered_repos)
+ 

@@ -1,9 +1,13 @@
- 
+from datetime import datetime
+
 from miner.models import (
     Finding,
     OrganizationReport,
     RepositoryResult,
     RepoStatus,
+    SbomInfo,
+    SbomOrganizationReport,
+    SbomStatus,
     Severity,
 )
  
@@ -96,6 +100,75 @@ def test_organization_report_summary_counts():
 def test_report_serializes_to_valid_json():
     repo = RepositoryResult(name="a", url="https://x/a", status=RepoStatus.ANALYZED)
     report = OrganizationReport.build("example-org", [repo])
+ 
+    payload = report.model_dump_json(indent=2)
+ 
+    assert '"organization": "example-org"' in payload
+
+
+def test_sbom_info_defaults():
+    sbom = SbomInfo(
+        repository="example-org/example-project",
+        commit="abc123",
+        generated_at=datetime(2026, 9, 17, 12, 0, 0),
+        syft_version="1.18.0",
+        status=SbomStatus.SUCCESS,
+        component_count=12,
+        sbom_path="sboms/example-project.cdx.json",
+    )
+    assert sbom.status == SbomStatus.SUCCESS
+    assert sbom.component_count == 12
+    assert sbom.error is None
+ 
+ 
+def test_sbom_info_failed_records_error():
+    sbom = SbomInfo(
+        repository="example-org/broken-repo",
+        commit=None,
+        generated_at=datetime(2026, 9, 17, 12, 0, 0),
+        syft_version=None,
+        status=SbomStatus.FAILED,
+        error="syft no encontrado",
+    )
+    assert sbom.status == SbomStatus.FAILED
+    assert sbom.component_count == 0
+    assert sbom.sbom_path is None
+    assert sbom.error == "syft no encontrado"
+ 
+ 
+def test_sbom_organization_report_orders_repositories_alphabetically():
+    now = datetime(2026, 9, 17, 12, 0, 0)
+    repos = [
+        SbomInfo(repository="zeta", generated_at=now, status=SbomStatus.SUCCESS, component_count=1),
+        SbomInfo(repository="alpha", generated_at=now, status=SbomStatus.SUCCESS, component_count=2),
+        SbomInfo(repository="mid", generated_at=now, status=SbomStatus.FAILED, error="boom"),
+    ]
+ 
+    report = SbomOrganizationReport.build("example-org", repos)
+ 
+    assert [r.repository for r in report.repositories] == ["alpha", "mid", "zeta"]
+ 
+ 
+def test_sbom_organization_report_summary_counts():
+    now = datetime(2026, 9, 17, 12, 0, 0)
+    repos = [
+        SbomInfo(repository="ok1", generated_at=now, status=SbomStatus.SUCCESS, component_count=5),
+        SbomInfo(repository="ok2", generated_at=now, status=SbomStatus.SUCCESS, component_count=0),
+        SbomInfo(repository="bad", generated_at=now, status=SbomStatus.FAILED, error="boom"),
+    ]
+ 
+    report = SbomOrganizationReport.build("example-org", repos)
+ 
+    assert report.summary.repositories == 3
+    assert report.summary.generated == 2
+    assert report.summary.failed == 1
+    assert report.summary.total_components == 5
+ 
+ 
+def test_sbom_organization_report_serializes_to_valid_json():
+    now = datetime(2026, 9, 17, 12, 0, 0)
+    repo = SbomInfo(repository="a", generated_at=now, status=SbomStatus.SUCCESS, component_count=3)
+    report = SbomOrganizationReport.build("example-org", [repo])
  
     payload = report.model_dump_json(indent=2)
  
